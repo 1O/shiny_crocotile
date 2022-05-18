@@ -4,7 +4,8 @@ sapply(c('sf',
          'waiter',
          'lwgeom',
          'dplyr',
-         'rmarkdown'
+         'rmarkdown',
+         'htmlwidgets'
          ), function(p) library(p, character.only = TRUE))
 
 session = shiny::getDefaultReactiveDomain()
@@ -48,26 +49,29 @@ server <- function(input, output, session) {
         'nat2k_polys' = 'nat2k_epsg3857_coarse',
         'nat2k_bboxes' = 'nat2k_bboxes_epsg3857',
         'deims_sites' = 'deims_boundaries_eu',
-        ## 'deims_sites' = 'deims_boundaries_2022_april_test',
         'nat2k_coverage' = 'nat2k_bboxes_coverage_epsg3857'        
     )
 
 
 
-    withProgress({        
-        static_shapes <- 
-            static_shapes %>%
-            purrr::imap(~ {
-                progress = grep(.y, names(static_shapes))/length(static_shapes)
-                att_loading$set(10 + 90 * progress) ## max: 100
-                incProgress(progress, message = 'loading geoinformation (once only)',
-                            detail = paste('feature:', .x)
-                            )
-                read_sf(dsn = file.path(resource_base,
-                                        paste0(.x, ifelse(testmode,'_test',''), '.shp'))) %>%
-                    st_transform(.,3857)
-            })
-    })
+    shapes_loaded <- reactiveVal()
+    shapes_loaded(FALSE)
+
+    static_shapes <- 
+        static_shapes %>%
+        purrr::imap(~ {
+            progress = grep(.y, names(static_shapes))/length(static_shapes)
+            att_loading$set(10 + 90 * progress) ## max: 100
+            incProgress(progress, message = 'loading geoinformation (once only)',
+                        detail = paste('feature:', .x)
+                        )
+            read_sf(dsn = file.path(resource_base,
+                                    paste0(.x, ifelse(testmode,'_test',''), '.shp'))) %>%
+                st_transform(.,3857)
+        })
+    shapes_loaded(TRUE)
+    output$shapes_loaded <- reactive(shapes_loaded())
+    outputOptions(output, "shapes_loaded", suspendWhenHidden = FALSE)
 
 
     removeUI('#loading')
@@ -127,45 +131,6 @@ server <- function(input, output, session) {
     output$site_type <- shiny::renderUI(span('site classification:', strong(case_type())))
     shape_dir_name <- file.path(tempdir(),'shapes')
 
-## -------test-------------------------------------------------------------------------
-
-## grep('Atelier Alp', static_shapes$sites$title)
-
-## feature <- static_shapes$sites[331,] %>% st_transform(3857) %>% st_geometry
-## feature %>% plot
-
-## eo_tiles  <- eo_tiles %>% st_transform(3857)
-
-
-##     source('./helpers.R')
-##     get_relevant_nat2k_for_vast_area(feature,
-##                                      static_shapes$nat2k_bboxes,
-##                                      static_shapes$nat2k_polys,
-##                                      nat2k_habitat_diversity,
-##                                      static_shapes$eo_tiles)
-
-## resource_base <- './www/data'
-##     list('nuts_countries_3857',
-##          'treshold_areas_for_case_c',
-##          'nat2k_habitat_diversity'
-##          ) %>%
-##         purrr::imap(~ {
-##             assign(x = .x, 
-##                    value = readRDS(file = file.path(resource_base, paste0(.x,'.rds'))),
-##                    envir = .GlobalEnv)
-##         })
-
-## static_shapes <- list()
-## static_shapes$sites <- read_sf('./www/data/deims_boundaries_2022_april.shp')
-## static_shapes$nat2k_bboxes <- read_sf('./www/data/nat2k_bboxes_epsg3857.shp')
-## static_shapes$nat2k_polys <- read_sf('./www/data/nat2k_epsg3857_coarse.shp')
-## static_shapes$eo_tiles <- read_sf('./www/data/sentinel-2-grid.shp') %>% st_transform(3857)
-
-## names(static_shapes) %>%    walk(~ print(paste(.x, static_shapes[[.x]] %>% nrow)))
-
-## static_shapes$nat2k_polys
-
-## ende test ------------------------------------------------------------
 
     observeEvent(results(),{
 
@@ -191,42 +156,25 @@ server <- function(input, output, session) {
     ignoreInit = FALSE, ignoreNULL = TRUE
     )
 
-    ## output$summary_table <- renderUI(
-
-    ##     tags$table(
-    ##              tags$tr(tags$td('site'), tags$td(strong(a(href = site()$orig_id, 
-    ##                                                              target = '_blank',
-    ##                                                              site_name())))),
-    ##              tags$tr(tags$td('category'), tags$td(actionButton('modal_explain_site_category',
-    ##                                                                strong(case_type()))
-    ##                                                   )), 
-    ##              tags$tr(tags$td('overlapping tiles'), tags$td(strong(paste(results()$overlapping_eo_tiles$Name,
-    ##                                                           collapse = ', ')))),
-    ##              tags$tr(tags$td('most relevant tile'), tags$td(strong(results()$relevant_eo_tile$Name)))
-    ##          )
-
-    ## )
-
-
     output$site_summary <- renderUI(
-        div(
-            h2('Results'),
-            p('site:', strong(a(href = site()$orig_id, 
-                         target = '_blank',
-                         site_name()
-                         ))
-              ),
-            p('site category:',
-              actionButton('modal_explain_site_category', strong(case_type()))
-              ),
-            p(length(results()$overlapping_eo_tiles$Name),
-              ' overlapping SENTINEL tiles:', strong(paste(results()$overlapping_eo_tiles$Name,
-                                                              collapse = ', '))
-              ),
-            p('most relevant tile:', strong(results()$relevant_eo_tile$Name)),
-            downloadButton("downloadData", "Download") 
+        div(class = 'well',
+            tags$ul(
+                     tags$li('site:',
+                             strong(a(href = site()$orig_id, target = '_blank', site_name()))
+                             ),
+                     tags$li('site category:', strong(case_type()),
+                             actionLink('modal_explain_site_category', strong("?"), class="btn-info")
+                             ),
+                     tags$li(length(results()$overlapping_eo_tiles$Name),
+                             ' overlapping SENTINEL tiles:', strong(paste(results()$overlapping_eo_tiles$Name,
+                                                                          collapse = ', '))
+                             ),
+                     tags$li('most relevant tile:', strong(results()$relevant_eo_tile$Name)
+                             )
+                 ),
+            tags$hr(),
+            downloadButton("downloadData", "Download", class="btn-success") 
         )
-        
     )
     
 
@@ -262,13 +210,12 @@ server <- function(input, output, session) {
 
 
 
-
     output$results_ready <- reactive(FALSE)
     outputOptions(output, 'results_ready', suspendWhenHidden = FALSE)
     output$plot <- renderLeaflet({
        site <-  results()[['site']] %>% st_transform(4326)
 
-       the_map <- leaflet() %>%
+       the_map <- leaflet(options = leafletOptions(zoomControl = FALSE)) %>%
            addProviderTiles(providers$Stamen.Terrain, #TonerLite,
                             options = providerTileOptions(noWrap = TRUE)
                             ) %>%
@@ -319,6 +266,7 @@ server <- function(input, output, session) {
                                                     label = ~paste('tile: ', Name, collapse = ''),
                                                     labelOptions = list(permanent = TRUE)
                                 )
+
                         }
 
                     }
@@ -329,7 +277,11 @@ server <- function(input, output, session) {
                        ## baseGroups = c("OSM (default)", "Toner", "Toner Lite"),
                        overlayGroups = features_to_plot,
                        options = layersControlOptions(collapsed = TRUE)
-                   )
+                   ) %>%
+           onRender(
+               "function(el, x) {
+          L.control.zoom({position:'topright'}).addTo(this);
+        }")
     })
 
     output$tempdir_path <- renderPrint(shape_dir_name)

@@ -1,0 +1,18 @@
+<p>
+  CrocoTile tries to find the most relevant
+  <a href="https://eatlas.org.au/data/uuid/f7468d15-12be-4e3f-a246-b2882a324f59">tile</a>
+  (granule) of SENTINEL earth observation data for any given 
+  <a href="https://elter-projects.org/lter-sites">eLTER site</a>. 
+</p>
+<p>
+  The association between site and tiles is straightforward in most cases. However, some sites are not as easily
+  assigned to a single tile because they are <em>scattered</em>
+  or <em>very large</em>
+  (relative to the tile size of 100&times;100&nbsp;km<sup>2</sup>). 
+</p>
+<p>
+  In these cases, <a href="./data/Methods.pdf">several spatial operations</a> (e. g. buffering of dispersed sites or scoring of tiles by habitat diversity) are conducted to select of the tile most representative of the particular eLTER site. Where indicated, original site boundaries are clipped to the representative tile's extent.
+</p>
+<p>
+  The generated spatial data together are bundled with documentation and method description for download by the user.
+</p>
