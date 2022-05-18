@@ -1,6 +1,7 @@
 library(waiter)
+library(shinythemes)
 
-ui <- fluidPage(
+ui <- fluidPage(theme = shinytheme("flatly"),
 
     ## some CSS
     tags$head(
