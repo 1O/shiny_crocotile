@@ -163,7 +163,9 @@ server <- function(input, output, session) {
                              strong(a(href = site()$orig_id, target = '_blank', site_name()))
                              ),
                      tags$li('site category:', strong(case_type()),
-                             actionLink('modal_explain_site_category', strong("?"), class="btn-info")
+                             actionLink('modal_explain_site_category', 
+                                        strong(icon(name = 'info')),
+                                        class="badge")
                              ),
                      tags$li(length(results()$overlapping_eo_tiles$Name),
                              ' overlapping SENTINEL tiles:', strong(paste(results()$overlapping_eo_tiles$Name,
@@ -173,7 +175,7 @@ server <- function(input, output, session) {
                              )
                  ),
             tags$hr(),
-            downloadButton("downloadData", "Download", class="btn-success") 
+            downloadButton("downloadData", "Download", class="btn btn-success")
         )
     )
     
