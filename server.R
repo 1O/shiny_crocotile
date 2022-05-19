@@ -4,6 +4,7 @@ sapply(c('sf',
          'waiter',
          'lwgeom',
          'dplyr',
+         'tidyr',
          'rmarkdown',
          'htmlwidgets'
          ), function(p) library(p, character.only = TRUE))
