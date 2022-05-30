@@ -1,7 +1,12 @@
 library(waiter)
 library(shinythemes)
+library(bslib)
 
-ui <- fluidPage(theme = shinytheme("flatly"),
+eShape_theme <- bs_theme(
+  primary = "#ef3d5a"
+)
+
+ui <- fluidPage(theme = eShape_theme, ##shinytheme("flatly"),
 
     ## some CSS
     tags$head(
@@ -10,6 +15,7 @@ ui <- fluidPage(theme = shinytheme("flatly"),
 
     ## App title ----
     titlePanel(title = div(
+                   tags$img(src = 'eshape-logo.png', height = 50),
                    tags$img(src = 'data/crocotile.svg', width = 200),
                    'crocoTile'
                ),
